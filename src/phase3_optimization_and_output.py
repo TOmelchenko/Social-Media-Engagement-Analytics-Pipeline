@@ -1,6 +1,14 @@
-from utils import get_spark
+from utils import get_spark, get_connection
 from pyspark.sql.functions import col, upper, trim, when, udf
 from pyspark.sql.types import StringType
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Load settings for db connection
+with open("config/settings.json") as f:
+    settings = json.load(f)
 
 # Initialize Spark
 spark = get_spark("SocialMediaPhase1RawDataInspection")
@@ -203,5 +211,45 @@ region_engagement_repartitioned_df.write.mode("overwrite").parquet(
 parquet_check_df = spark.read.parquet("data/output/parquet/category_engagement_summary")
 parquet_check_df.show(truncate=False)
 parquet_check_df.printSchema()
+
+
+# Save data in PostgreSQL
+final_reporting_df = creator_engagement_df.select(
+    "creator_user_id",
+    "username",
+    "creator_total_engagement"
+)
+final_reporting_df.show(truncate=False)
+
+def load_final_report(records):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM final_report;")
+
+    insert_query = """
+        INSERT INTO final_report (
+            creator_user_id,
+            username,
+            creator_total_engagement
+        )
+        VALUES (%s, %s, %s);
+    """
+
+    for record in records:
+        cursor.execute(
+            insert_query,
+            (
+                record["creator_user_id"],
+                record["username"],
+                record["creator_total_engagement"]
+            )
+        )
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+load_final_report(final_reporting_df.collect())
 
 spark.stop()

@@ -1,0 +1,8 @@
+{
+  "raw_data_folder": "data/raw",
+  "output_folder": "data/output",
+  "db_name": "social_media",
+  "db_user": "tetianaomelchenko",
+  "db_host": "localhost",
+  "db_port": 5432
+}
