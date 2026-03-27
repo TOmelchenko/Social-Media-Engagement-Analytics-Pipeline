@@ -65,9 +65,8 @@ users_renamed_df = users_selected_df.withColumnRenamed("user_id", "creator_user_
 
 engagement_cast_df = engagement_selected_df.withColumn(
     "engagement_value",
-    col("engagement_value").cast("int")
+    trim(col("engagement_value")).try_cast("int")
 )
-
 
 users_cast_df = users_renamed_df.withColumn(
     "followers_count",
@@ -76,7 +75,7 @@ users_cast_df = users_renamed_df.withColumn(
 
 posts_cast_df = posts_selected_df.withColumn(
     "content_length",
-    col("content_length").cast("int")
+    trim(col("content_length")).try_cast("int")
 )
 
 # Drop N/A column
